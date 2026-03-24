@@ -1,0 +1,86 @@
+services:
+  app:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: signnow-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./api:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - signnow-network
+
+  db:
+    image: mysql:8.0
+    container_name: signnow-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: signnow_db
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_USER: signnow
+      MYSQL_PASSWORD: password
+    ports:
+      - "13307:3306"
+    volumes:
+      - signnow-dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - signnow-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: signnow-nginx
+    restart: unless-stopped
+    ports:
+      - "11008:80"
+    volumes:
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - ./api:/var/www/html
+    depends_on:
+      - app
+    networks:
+      - signnow-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: signnow-frontend
+    ports:
+      - "11003:3000"
+    environment:
+      - HOST=0.0.0.0
+      - REACT_APP_API_URL=http://nginx/api
+    networks:
+      - signnow-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: signnow-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "11080:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: password
+    depends_on:
+      - db
+    networks:
+      - signnow-network
+
+volumes:
+  signnow-dbdata:
+    driver: local
+
+networks:
+  signnow-network:
+    driver: bridge
