@@ -57,7 +57,7 @@ services:
       - "11003:3000"
     environment:
       - HOST=0.0.0.0
-      - REACT_APP_API_URL=http://nginx/api
+      - VITE_API_URL=http://nginx/api
     networks:
       - signnow-network
 
