@@ -26,4 +26,4 @@ php artisan route:cache
 echo "✅ Laravel pronto"
 
 # Inicia PHP-FPM
-php-fpm
+exec php-fpm
